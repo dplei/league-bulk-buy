@@ -1,0 +1,12 @@
+{
+  "name": "league-bulk-buy",
+  "description": "Bulk buy tool for League of Legends",
+  "private": true,
+  "scripts": {
+    "dev": "concurrently \"pnpm --filter backend dev\" \"pnpm --filter frontend dev\"",
+    "build": "pnpm --filter backend build && pnpm --filter frontend build"
+  },
+  "devDependencies": {
+    "concurrently": "^9.0.0"
+  }
+}

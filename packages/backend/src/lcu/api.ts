@@ -14,31 +14,47 @@ export interface Wallet {
 }
 
 export interface CatalogItem {
+  active: boolean
+  description: string
+  imagePath: string
+  inactiveDate: number
+  inventoryType: string
   itemId: number
-  localizations: Record<string, { name: string; description: string }>
+  itemInstanceId: string
+  loadScreenPath: string
+  maxQuantity: number
+  metadata: any
+  name: string
+  offerId: string
+  owned: boolean
+  ownershipType: any
   prices: Array<{
     currency: string
     cost: number
-    costType: string
+    costType?: string
   }>
-  inventoryType: string
+  purchaseDate: number
+  questSkinInfo: any
+  rarity: string
+  releaseDate: number
+  sale: any
   subInventoryType: string
-  sale?: {
-    startDate: string
-    endDate: string
-    prices: Array<{ currency: string; cost: number }>
-  }
-  active: boolean
-  inactiveDate?: string
-  maxQuantity: number
-  purchasable: boolean
+  subTitle: string
+  taggedChampionsIds: number[]
+  tags: string[]
+  tilePath: string
 }
 
 export interface PurchaseItem {
-  inventoryType: string
-  itemId: number
-  ipCost: number
-  rpCost: number
+  itemKey: {
+    inventoryType: string // e.g., 'CHAMPION'
+    itemId: number
+  }
+  purchaseCurrencyInfo: {
+    currencyType: string // e.g., 'IP' or 'RP'
+    price: number
+    purchasable: boolean
+  }
   quantity: number
 }
 
@@ -52,32 +68,38 @@ export interface PurchaseResult {
 }
 
 export class LcuApi {
-  constructor(private client: LcuClient) {}
+  constructor(private client: LcuClient) { }
 
   getSummoner(): Promise<Summoner> {
     return this.client.get('/lol-summoner/v1/current-summoner')
   }
 
-  getWallet(): Promise<Wallet> {
-    return this.client.get('/lol-store/v1/wallet')
+  async getWallet(): Promise<Wallet> {
+    const [ipRes, rpRes] = await Promise.all([
+      this.client.get<{ lol_blue_essence: number }>('/lol-inventory/v1/wallet/IP'),
+      this.client.get<{ RP: number }>('/lol-inventory/v1/wallet/RP'),
+    ])
+    return {
+      ip: ipRes.lol_blue_essence || 0,
+      rp: rpRes.RP || 0,
+    }
   }
 
   async getChampionCatalog(): Promise<CatalogItem[]> {
     const all = await this.client.get<CatalogItem[]>(
-      '/lol-store/v1/catalog?inventoryType=CHAMPION'
+      '/lol-catalog/v1/items/CHAMPION'
     )
-    // 只返回可购买的
-    return all.filter((item) => item.purchasable)
+    return all
   }
 
   async getOwnedChampionIds(): Promise<number[]> {
     const inventory = await this.client.get<Array<{ itemId: number; inventoryType: string }>>(
-      '/lol-inventory/v1/inventory?inventoryTypes=CHAMPION'
+      '/lol-inventory/v1/inventory?inventoryTypes=%5B%22CHAMPION%22%5D'
     )
     return inventory.map((i) => i.itemId)
   }
 
   purchaseItems(items: PurchaseItem[]): Promise<PurchaseResult> {
-    return this.client.post('/lol-purchase-widget/v1/purchaseItems', { items })
+    return this.client.post('/lol-purchase-widget/v2/purchaseItems', { items })
   }
 }

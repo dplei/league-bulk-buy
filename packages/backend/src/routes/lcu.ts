@@ -41,32 +41,28 @@ router.get('/champions', async (_req: Request, res: Response) => {
     const ownedSet = new Set(ownedIds)
 
     const champions = catalog.map((item) => {
-      const localization =
-        item.localizations['zh_CN'] ||
-        item.localizations['en_US'] ||
-        Object.values(item.localizations)[0]
-
-      const bePrice = item.prices.find(
-        (p) => p.currency === 'IP' || p.currency === 'BluEssence'
+      const ipPrice = item.prices.find(
+        (p: any) => p.currency === 'IP' || p.currency === 'BluEssence'
       )
-      const rpPrice = item.prices.find((p) => p.currency === 'RP')
+      const rpPrice = item.prices.find((p: any) => p.currency === 'RP')
 
-      const saleBePrice = item.sale?.prices.find(
-        (p) => p.currency === 'IP' || p.currency === 'BluEssence'
+      const saleIpPrice = item.sale?.prices.find(
+        (p: any) => p.currency === 'IP' || p.currency === 'BluEssence'
       )
-      const saleRpPrice = item.sale?.prices.find((p) => p.currency === 'RP')
+      const saleRpPrice = item.sale?.prices.find((p: any) => p.currency === 'RP')
 
       return {
+        ...item,
         itemId: item.itemId,
-        name: localization?.name ?? `Champion ${item.itemId}`,
-        description: localization?.description ?? '',
-        bePrice: bePrice?.cost ?? null,
+        name: item.name ?? `Champion ${item.itemId}`,
+        description: item.description ?? '',
+        ipPrice: ipPrice?.cost ?? null,
         rpPrice: rpPrice?.cost ?? null,
-        saleBePrice: saleBePrice?.cost ?? null,
+        saleIpPrice: saleIpPrice?.cost ?? null,
         saleRpPrice: saleRpPrice?.cost ?? null,
         onSale: !!item.sale,
-        owned: ownedSet.has(item.itemId),
-        purchasable: item.purchasable,
+        owned: ownedSet.has(item.itemId) || item.owned,
+        purchasable: !item.owned,
       }
     })
 
@@ -77,11 +73,11 @@ router.get('/champions', async (_req: Request, res: Response) => {
 })
 
 // POST /api/purchase - 批量购买
-// Body: { items: Array<{ itemId: number, currency: 'BE' | 'RP' }> }
+// Body: { items: Array<{ itemId: number, currency: 'IP' | 'RP' }> }
 router.post('/purchase', async (req: Request, res: Response) => {
   try {
     const { items } = req.body as {
-      items: Array<{ itemId: number; currency: 'BE' | 'RP'; cost: number }>
+      items: Array<{ itemId: number; currency: 'IP' | 'RP'; cost: number }>
     }
 
     if (!Array.isArray(items) || items.length === 0) {
@@ -97,10 +93,15 @@ router.post('/purchase', async (req: Request, res: Response) => {
     const api = await createApi()
 
     const purchaseItems: PurchaseItem[] = items.map((item) => ({
-      inventoryType: 'CHAMPION',
-      itemId: item.itemId,
-      ipCost: item.currency === 'BE' ? item.cost : 0,
-      rpCost: item.currency === 'RP' ? item.cost : 0,
+      itemKey: {
+        inventoryType: 'CHAMPION',
+        itemId: item.itemId,
+      },
+      purchaseCurrencyInfo: {
+        currencyType: (item.currency as string) === 'BE' ? 'IP' : item.currency,
+        price: item.cost,
+        purchasable: true,
+      },
       quantity: 1,
     }))
 

@@ -20,17 +20,19 @@ export interface Champion {
   itemId: number
   name: string
   description: string
-  bePrice: number | null
+  ipPrice: number | null
   rpPrice: number | null
-  saleBePrice: number | null
+  saleIpPrice: number | null
   saleRpPrice: number | null
   onSale: boolean
   owned: boolean
   purchasable: boolean
+  // Add an index signature to allow the raw LCU fields
+  [key: string]: any
 }
 
 export interface PurchasePayload {
-  items: Array<{ itemId: number; currency: 'BE' | 'RP'; cost: number }>
+  items: Array<{ itemId: number; currency: 'IP' | 'RP'; cost: number }>
 }
 
 async function request<T>(url: string, options?: RequestInit): Promise<T> {

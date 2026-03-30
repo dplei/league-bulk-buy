@@ -1,0 +1,28 @@
+Trying /lol-inventory/v1/wallet...
+(node:32388) Warning: Setting the NODE_TLS_REJECT_UNAUTHORIZED environment variable to '0' makes TLS connections and HTTPS requests insecure by disabling certificate verification.
+(Use `node --trace-warnings ...` to show where the warning was created)
+Error /lol-inventory/v1/wallet: LCU 璇锋眰澶辫触 [400] /lol-inventory/v1/wallet: {"errorCode":"RPC_ERROR","httpStatus":400,"implementationDetails":{},"message":"Couldn't assign value to 'currencyTypes' of type vector because the input not a collection."}
+Trying /lol-inventory/v1/wallet/IP...
+Success /lol-inventory/v1/wallet/IP: {
+  lol_blue_essence: 3296,
+  lol_orange_essence: 1250,
+  mgs_opal_shield: 3400
+}
+Trying /lol-inventory/v1/wallet/BE...
+Success /lol-inventory/v1/wallet/BE: {
+  lol_blue_essence: 3296,
+  lol_orange_essence: 1250,
+  mgs_opal_shield: 3400
+}
+Trying /lol-inventory/v1/wallet/RP...
+Success /lol-inventory/v1/wallet/RP: { RP: 0 }
+Trying /lol-inventory/v1/signedWallet...
+Error /lol-inventory/v1/signedWallet: LCU 璇锋眰澶辫触 [400] /lol-inventory/v1/signedWallet: {"errorCode":"RPC_ERROR","httpStatus":400,"implementationDetails":{},"message":"Couldn't assign value to 'currencyTypes' of type vector because the input not a collection."}
+Trying /lol-inventory/v1/signedWallet/IP...
+Success /lol-inventory/v1/signedWallet/IP: {
+  IP: 'eyJraWQiOiIxIiwiYWxnIjoiUlM1MTIifQ.eyJzdWIiOiJhNDQ3NmVhZC0zZGViLTVhMDgtYTc2OC1lYmIwY2NkYzY4NzgiLCJzaGFyZElkIjoiSE4xIiwiYmFsYW5jZXMiOnsibG9sX2JsdWVfZXNzZW5jZSI6MzI5NiwibWdzX29wYWxfc2hpZWxkIjozNDAwLCJsb2xfb3JhbmdlX2Vzc2VuY2UiOjEyNTB9LCJleHAiOjE3NzQ5NDUzMzEsImlhdCI6MTc3NDg1ODkzMX0.ckBoTGG-wXTyjl5Sxq8ypZ07NS4taXaRNk41mo-7Sq7-DHcoDsXjM7g1udRou9VNC5HYF9m-PUUzIaHfTHnXd0EEgwLrABT7jn4bfzbbjobVc0R4zxnhk--D97CoLIkmVdZ8FLWDohXHAYfQCv_J0yI-XVXkB_CuMOtMx7Xs5Ww'
+}
+Trying /lol-login/v1/wallet...
+Success /lol-login/v1/wallet: { ip: 0, rp: 0 }
+Trying /lol-store/v1/wallet...
+Error /lol-store/v1/wallet: LCU 璇锋眰澶辫触 [404] /lol-store/v1/wallet: {"errorCode":"RPC_ERROR","httpStatus":404,"implementationDetails":{},"message":"Not found"}

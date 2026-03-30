@@ -1,0 +1,31 @@
+{
+  "name": "@leagueakari/league-akari-addons",
+  "version": "1.0.0",
+  "description": "Enhancements for League Akari",
+  "types": "dist/index.d.ts",
+  "main": "dist/index.js",
+  "keywords": [],
+  "author": {
+    "name": "Hanxven",
+    "email": "hanxven@gmail.com"
+  },
+  "license": "GPL-3.0-only",
+  "dependencies": {
+    "node-addon-api": "^8.3.1"
+  },
+  "gypfile": true,
+  "devDependencies": {
+    "@types/node": "^22.13.9",
+    "typescript": "^5.8.2"
+  },
+  "files": [
+    "dist",
+    "addons"
+  ],
+  "publishConfig": {
+    "registry": "https://npm.pkg.github.com/"
+  },
+  "scripts": {
+    "build": "node scripts/build.js"
+  }
+}

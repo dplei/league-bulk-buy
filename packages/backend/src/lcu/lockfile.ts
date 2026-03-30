@@ -40,11 +40,38 @@ function parseLockfile(filePath: string): LockfileData {
   return { port, password, protocol };
 }
 
+let addonTools: any = null;
+try {
+  // 尝试使用 LeagueAkari 的 C++ 底层拓展绕过 WMI 和 WeGame 权限拦截读取 PEB 命令行
+  addonTools = require('@leagueakari/league-akari-addons').tools;
+} catch (e) {}
+
 export async function getLockfileData(): Promise<LockfileData> {
-  // 1. 首选方案：尝试通过 WMI 获取正在运行进程的命令行参数（准确，应对多开）
+  // 0. 最高优先级方案：通过 C++ 底层拓展直接读取 PEB (绕过管理员限制与 8192 字符截断问题)
+  if (addonTools) {
+    try {
+      const pids = addonTools.getPidsByName('LeagueClientUx.exe');
+      for (const pid of pids) {
+        try {
+          const cmd = addonTools.getCommandLine1(pid);
+          if (cmd) {
+            const portMatch = cmd.match(/--app-port=([0-9]+)/);
+            const passwordMatch = cmd.match(/--remoting-auth-token=([\w-_]+)/);
+            if (portMatch && passwordMatch) {
+              return { port: portMatch[1], password: passwordMatch[1], protocol: 'https' };
+            }
+          }
+        } catch (err) {}
+      }
+    } catch (e) {
+      // 忽略 C++ 拓展读取错误
+    }
+  }
+
+  // 1. 次选方案：尝试通过 WMI 获取正在运行进程的命令行参数（准确，应对多开）
   try {
     const result = await execAsync(
-      'wmic process where "name=\'LeagueClientUx.exe\'" get commandline'
+      'wmic process where "name=\'LeagueClientUx.exe\'" get commandline,executablepath'
     );
     const stdout = result.stdout;
 
@@ -54,6 +81,16 @@ export async function getLockfileData(): Promise<LockfileData> {
     // 能成功匹配，说明有权限读取
     if (portMatch && passwordMatch) {
       return { port: portMatch[1], password: passwordMatch[1], protocol: 'https' };
+    }
+
+    // WMI 命令行可能因为 WeGame 参数过多（>8192字符）被截断，导致匹配不到。
+    // 此时从 WMI 输出中提取 ExecutablePath，直接读取该目录下的 lockfile：
+    const execPathMatch = stdout.match(/([a-zA-Z]:\\[^\n]*?LeagueClientUx\.exe)/i);
+    if (execPathMatch && execPathMatch[1]) {
+      const lockfilePath = path.join(path.dirname(execPathMatch[1].trim()), 'lockfile');
+      if (fs.existsSync(lockfilePath)) {
+        return parseLockfile(lockfilePath);
+      }
     }
   } catch (err) {
     // 忽略 WMI 错误，可能未安装 wmic 或出错

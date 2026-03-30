@@ -15,14 +15,14 @@ export const useLcuStore = defineStore('lcu', () => {
 
   // 过滤器
   const filterOwned = ref<'all' | 'owned' | 'unowned'>('unowned')
-  const filterCurrency = ref<'all' | 'BE' | 'RP'>('BE')
+  const filterCurrency = ref<'all' | 'IP' | 'RP'>('IP')
   const searchQuery = ref('')
 
   const filteredChampions = computed(() => {
     return champions.value.filter((c) => {
       if (filterOwned.value === 'owned' && !c.owned) return false
       if (filterOwned.value === 'unowned' && c.owned) return false
-      if (filterCurrency.value === 'BE' && c.bePrice === null) return false
+      if (filterCurrency.value === 'IP' && c.ipPrice === null) return false
       if (filterCurrency.value === 'RP' && c.rpPrice === null) return false
       if (searchQuery.value) {
         return c.name.toLowerCase().includes(searchQuery.value.toLowerCase())
@@ -38,16 +38,16 @@ export const useLcuStore = defineStore('lcu', () => {
   const estimatedCost = computed(() => {
     return selectedChampions.value.reduce(
       (acc, c) => {
-        const beCost = c.saleBePrice ?? c.bePrice ?? 0
+        const ipCost = c.saleIpPrice ?? c.ipPrice ?? 0
         const rpCost = c.saleRpPrice ?? c.rpPrice ?? 0
         if (filterCurrency.value === 'RP') {
           acc.rp += rpCost
         } else {
-          acc.be += beCost
+          acc.ip += ipCost
         }
         return acc
       },
-      { be: 0, rp: 0 }
+      { ip: 0, rp: 0 }
     )
   })
 
@@ -107,17 +107,17 @@ export const useLcuStore = defineStore('lcu', () => {
     try {
       // 分批购买，每批最多 10 个
       const BATCH_SIZE = 10
-      const currency = filterCurrency.value === 'RP' ? 'RP' : 'BE'
+      const currency = filterCurrency.value === 'RP' ? 'RP' : 'IP'
 
       const items = selectedChampions.value
         .filter((c) => !c.owned)
         .map((c) => ({
           itemId: c.itemId,
-          currency,
+          currency: currency as 'IP' | 'RP',
           cost:
             currency === 'RP'
               ? (c.saleRpPrice ?? c.rpPrice ?? 0)
-              : (c.saleBePrice ?? c.bePrice ?? 0),
+              : (c.saleIpPrice ?? c.ipPrice ?? 0),
         }))
 
       for (let i = 0; i < items.length; i += BATCH_SIZE) {

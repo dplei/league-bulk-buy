@@ -10,7 +10,7 @@
   >
     <div class="champion-avatar">
       <img
-        :src="`https://ddragon.leagueoflegends.com/cdn/14.20.1/img/champion/${champion.itemId}.png`"
+        :src="`https://raw.communitydragon.org/latest/plugins/rcp-be-lol-game-data/global/default/v1/champion-icons/${champion.itemId}.png`"
         :alt="champion.name"
         loading="lazy"
         @error="onImgError"
@@ -23,9 +23,9 @@
     <div class="champion-info">
       <div class="champion-name">{{ champion.name }}</div>
       <div class="champion-prices">
-        <span v-if="champion.bePrice" class="price be">
-          <span v-if="champion.saleBePrice" class="original">{{ champion.bePrice }}</span>
-          <span class="current">{{ champion.saleBePrice ?? champion.bePrice }} BE</span>
+        <span v-if="champion.ipPrice" class="price ip">
+          <span v-if="champion.saleIpPrice" class="original">{{ champion.ipPrice }}</span>
+          <span class="current">{{ champion.saleIpPrice ?? champion.ipPrice }} 精粹</span>
         </span>
         <span v-if="champion.rpPrice" class="price rp">
           <span v-if="champion.saleRpPrice" class="original">{{ champion.rpPrice }}</span>
@@ -159,7 +159,7 @@ function onImgError(e: Event) {
   margin-right: 4px;
 }
 
-.price.be .current {
+.price.ip .current {
   color: #7ec8e3;
 }
 

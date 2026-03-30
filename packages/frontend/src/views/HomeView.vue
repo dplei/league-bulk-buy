@@ -11,7 +11,7 @@
 
       <div v-if="store.summoner" class="summoner-info">
         <span class="summoner-name">{{ store.summoner.displayName }}</span>
-        <span class="wallet be">{{ store.wallet?.ip.toLocaleString() }} BE</span>
+        <span class="wallet ip">{{ store.wallet?.ip.toLocaleString() }} 精粹</span>
         <span class="wallet rp">{{ store.wallet?.rp.toLocaleString() }} RP</span>
       </div>
 
@@ -55,7 +55,7 @@
           <label>货币：</label>
           <select v-model="store.filterCurrency">
             <option value="all">全部</option>
-            <option value="BE">蓝色精华</option>
+            <option value="IP">精粹</option>
             <option value="RP">RP</option>
           </select>
         </div>
@@ -82,7 +82,7 @@
       <div v-if="store.selectedIds.size > 0" class="purchase-bar">
         <div class="purchase-summary">
           已选择 <strong>{{ store.selectedChampions.length }}</strong> 个英雄
-          <span v-if="store.estimatedCost.be > 0"> · 预计消耗 {{ store.estimatedCost.be.toLocaleString() }} BE</span>
+          <span v-if="store.estimatedCost.ip > 0"> · 预计消耗 {{ store.estimatedCost.ip.toLocaleString() }} 精粹</span>
           <span v-if="store.estimatedCost.rp > 0"> · 预计消耗 {{ store.estimatedCost.rp.toLocaleString() }} RP</span>
         </div>
 
@@ -197,7 +197,7 @@ onMounted(refreshAll)
   font-weight: 600;
 }
 
-.wallet.be {
+.wallet.ip {
   background: rgba(126, 200, 227, 0.15);
   color: #7ec8e3;
 }

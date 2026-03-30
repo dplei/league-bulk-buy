@@ -11,11 +11,19 @@
 
       <div v-if="store.summoner" class="summoner-info">
         <span class="summoner-name">{{ store.summoner.displayName }}</span>
-        <span class="wallet ip">{{ store.wallet?.ip.toLocaleString() }} 精粹</span>
-        <span class="wallet rp">{{ store.wallet?.rp.toLocaleString() }} RP</span>
+        <span class="wallet ip"
+          >{{ store.wallet?.ip.toLocaleString() }} 精粹</span
+        >
+        <span class="wallet rp"
+          >{{ store.wallet?.rp.toLocaleString() }} RP</span
+        >
       </div>
 
-      <button class="btn btn-secondary" @click="refreshAll" :disabled="store.loading">
+      <button
+        class="btn btn-secondary"
+        @click="refreshAll"
+        :disabled="store.loading"
+      >
         {{ store.loading ? '加载中...' : '刷新' }}
       </button>
     </header>
@@ -28,7 +36,9 @@
     <!-- 未连接提示 -->
     <div v-if="!store.connected && !store.loading" class="not-connected">
       <p>无法连接到 League of Legends 客户端</p>
-      <p class="hint">请确保：1. 英雄联盟客户端已启动并登录  2. 安装路径在默认位置</p>
+      <p class="hint">
+        请确保：1. 英雄联盟客户端已启动并登录 2. 安装路径在默认位置
+      </p>
       <button class="btn btn-primary" @click="refreshAll">重新连接</button>
     </div>
 
@@ -60,24 +70,35 @@
           </select>
         </div>
 
-        <button class="btn btn-secondary btn-sm" @click="store.selectAll">全选未拥有</button>
-        <button class="btn btn-secondary btn-sm" @click="store.clearSelection">清空选择</button>
+        <button class="btn btn-secondary btn-sm" @click="store.selectAll">
+          全选未拥有
+        </button>
+        <button class="btn btn-secondary btn-sm" @click="store.clearSelection">
+          清空选择
+        </button>
+        <button
+          class="btn btn-secondary btn-sm"
+          @click="showTemplateDrawer = true"
+        >
+          📋 我的清单{{
+            store.templates.length > 0 ? ` (${store.templates.length})` : ''
+          }}
+        </button>
       </div>
 
       <!-- 高级筛选栏 -->
       <div class="advanced-filters">
-        <!-- 角色/职位筛选 -->
         <div class="filter-section">
           <div class="filter-title">角色职位：</div>
           <div class="tag-group">
             <button
-              v-for="tag in availableTags"
-              :key="tag"
+              v-for="tag in roleTagPresets"
+              :key="tag.value"
               class="tag-btn"
-              :class="{ active: store.selectedTags.has(tag) }"
-              @click="store.toggleTag(tag)"
+              :class="{ active: store.selectedTags.has(tag.value) }"
+              @click="store.toggleTag(tag.value)"
             >
-              {{ tag }}
+              {{ tag.label }}
             </button>
             <button
               v-if="store.selectedTags.size > 0"
@@ -99,7 +120,8 @@
               class="price-btn"
               :class="{
                 active:
-                  store.priceRanges.min === preset.min && store.priceRanges.max === preset.max,
+                  store.priceRanges.min === preset.min &&
+                  store.priceRanges.max === preset.max
               }"
               @click="store.setPriceRange(preset.min, preset.max)"
             >
@@ -110,9 +132,7 @@
       </div>
 
       <!-- 英雄列表 -->
-      <div v-if="store.loading" class="loading">
-        加载英雄列表中...
-      </div>
+      <div v-if="store.loading" class="loading">加载英雄列表中...</div>
       <div v-else class="champion-grid">
         <ChampionCard
           v-for="champ in store.filteredChampions"
@@ -127,12 +147,19 @@
       <div v-if="store.selectedIds.size > 0" class="purchase-bar">
         <div class="purchase-summary">
           已选择 <strong>{{ store.selectedChampions.length }}</strong> 个英雄
-          <span v-if="store.estimatedCost.ip > 0"> · 预计消耗 {{ store.estimatedCost.ip.toLocaleString() }} 精粹</span>
-          <span v-if="store.estimatedCost.rp > 0"> · 预计消耗 {{ store.estimatedCost.rp.toLocaleString() }} RP</span>
+          <span v-if="store.estimatedCost.ip > 0">
+            · 预计消耗 {{ store.estimatedCost.ip.toLocaleString() }} 精粹</span
+          >
+          <span v-if="store.estimatedCost.rp > 0">
+            · 预计消耗 {{ store.estimatedCost.rp.toLocaleString() }} RP</span
+          >
         </div>
 
         <div class="action-buttons">
-          <button class="btn btn-secondary btn-sm" @click="showTemplateDrawer = true">
+          <button
+            class="btn btn-secondary btn-sm"
+            @click="showTemplateDrawer = true"
+          >
             💾 保存清单
           </button>
           <button
@@ -169,7 +196,9 @@
             placeholder="输入模板名称（如：必买上分池）"
             @keyup.enter="handleSaveTemplate"
           />
-          <button class="btn btn-primary btn-full" @click="handleSaveTemplate">保存模板</button>
+          <button class="btn btn-primary btn-full" @click="handleSaveTemplate">
+            保存模板
+          </button>
         </div>
 
         <!-- 已保存的模板列表 -->
@@ -179,18 +208,29 @@
             暂无保存的模板
           </div>
           <div v-else class="template-items">
-            <div v-for="template in store.templates" :key="template.name" class="template-item">
+            <div
+              v-for="template in store.templates"
+              :key="template.name"
+              class="template-item"
+            >
               <div class="template-info">
                 <div class="template-name">{{ template.name }}</div>
                 <div class="template-meta">
-                  {{ template.championIds.length }} 个英雄 · {{ new Date(template.date).toLocaleDateString('zh-CN') }}
+                  {{ template.championIds.length }} 个英雄 ·
+                  {{ new Date(template.date).toLocaleDateString('zh-CN') }}
                 </div>
               </div>
               <div class="template-actions">
-                <button class="btn btn-secondary btn-sm" @click="handleApplyTemplate(template.name)">
-                  应用
+                <button
+                  class="btn btn-secondary btn-sm"
+                  @click="handleApplyTemplate(template.name)"
+                >
+                  应用到购物车
                 </button>
-                <button class="btn btn-danger btn-sm" @click="handleDeleteTemplate(template.name)">
+                <button
+                  class="btn btn-danger btn-sm"
+                  @click="handleDeleteTemplate(template.name)"
+                >
                   删除
                 </button>
               </div>
@@ -203,21 +243,24 @@
 </template>
 
 <script setup lang="ts">
-import { onMounted, ref, computed } from 'vue'
-import { ElMessage, ElMessageBox, ElDrawer } from 'element-plus'
-import { useLcuStore } from '../stores/lcu.js'
-import ChampionCard from '../components/ChampionCard.vue'
+import { onMounted, ref } from 'vue';
+import { ElMessage, ElMessageBox, ElDrawer } from 'element-plus';
+import { useLcuStore } from '../stores/lcu.js';
+import ChampionCard from '../components/ChampionCard.vue';
 
-const store = useLcuStore()
-const showTemplateDrawer = ref(false)
-const newTemplateName = ref('')
-const availableTags = computed(() => {
-  const tags = new Set<string>()
-  store.champions.forEach((c) => {
-    c.tags?.forEach((tag) => tags.add(tag))
-  })
-  return Array.from(tags).sort()
-})
+const store = useLcuStore();
+const showTemplateDrawer = ref(false);
+const newTemplateName = ref('');
+
+// 角色职位标签（LCU API 使用英文 tag 值）
+const roleTagPresets = [
+  { label: '战士', value: 'Fighter' },
+  { label: '射手', value: 'Marksman' },
+  { label: '辅助', value: 'Support' },
+  { label: '法师', value: 'Mage' },
+  { label: '坦克', value: 'Tank' },
+  { label: '刺客', value: 'Assassin' }
+];
 
 // 预设价格范围
 const pricePresets = [
@@ -225,14 +268,14 @@ const pricePresets = [
   { label: '<3150 精粹', min: 0, max: 3150 },
   { label: '3150-4800 精粹', min: 3150, max: 4800 },
   { label: '4800-6300 精粹', min: 4800, max: 6300 },
-  { label: '>6300 精粹', min: 6300, max: Infinity },
-]
+  { label: '>6300 精粹', min: 6300, max: Infinity }
+];
 
 async function refreshAll() {
-  await store.checkStatus()
+  await store.checkStatus();
   if (store.connected) {
-    await store.loadChampions()
-    store.loadTemplates()
+    await store.loadChampions();
+    store.loadTemplates();
   }
 }
 
@@ -244,31 +287,31 @@ async function handlePurchase() {
       {
         confirmButtonText: '确认购买',
         cancelButtonText: '取消',
-        type: 'warning',
+        type: 'warning'
       }
-    )
-    await store.purchaseSelected()
-    ElMessage.success('购买流程已启动，请查看日志')
+    );
+    await store.purchaseSelected();
+    ElMessage.success('购买流程已启动，请查看日志');
   } catch (err: any) {
     if (err.message !== 'cancel') {
-      ElMessage.error(err.message || '购买被取消')
+      ElMessage.error(err.message || '购买被取消');
     }
   }
 }
 
 async function handleSaveTemplate() {
   if (!newTemplateName.value.trim()) {
-    ElMessage.error('请输入模板名称')
-    return
+    ElMessage.error('请输入模板名称');
+    return;
   }
-  store.saveTemplate(newTemplateName.value, Array.from(store.selectedIds))
-  ElMessage.success(`模板 "${newTemplateName.value}" 已保存`)
-  newTemplateName.value = ''
+  store.saveTemplate(newTemplateName.value, Array.from(store.selectedIds));
+  ElMessage.success(`模板 "${newTemplateName.value}" 已保存`);
+  newTemplateName.value = '';
 }
 
 function handleApplyTemplate(templateName: string) {
-  store.applyTemplate(templateName)
-  ElMessage.info(`已应用模板 "${templateName}"`)
+  store.applyTemplate(templateName);
+  ElMessage.info(`已应用模板 "${templateName}"`);
 }
 
 async function handleDeleteTemplate(templateName: string) {
@@ -279,19 +322,19 @@ async function handleDeleteTemplate(templateName: string) {
       {
         confirmButtonText: '删除',
         cancelButtonText: '取消',
-        type: 'warning',
+        type: 'warning'
       }
-    )
-    store.deleteTemplate(templateName)
-    ElMessage.success('模板已删除')
+    );
+    store.deleteTemplate(templateName);
+    ElMessage.success('模板已删除');
   } catch (err: any) {
     if (err.message !== 'cancel') {
-      ElMessage.error('删除失败')
+      ElMessage.error('删除失败');
     }
   }
 }
 
-onMounted(refreshAll)
+onMounted(refreshAll);
 </script>
 
 <style scoped>
@@ -386,8 +429,13 @@ onMounted(refreshAll)
   color: #666;
 }
 
-.not-connected p { margin: 8px 0; }
-.not-connected .hint { font-size: 13px; color: #555; }
+.not-connected p {
+  margin: 8px 0;
+}
+.not-connected .hint {
+  font-size: 13px;
+  color: #555;
+}
 
 .toolbar {
   display: flex;
@@ -498,21 +546,28 @@ onMounted(refreshAll)
   cursor: not-allowed;
 }
 
-.btn-sm { padding: 5px 10px; font-size: 12px; }
+.btn-sm {
+  padding: 5px 10px;
+  font-size: 12px;
+}
 
 .btn-primary {
   background: #c89b3c;
   color: #1a1a2e;
 }
 
-.btn-primary:hover:not(:disabled) { background: #e0b84a; }
+.btn-primary:hover:not(:disabled) {
+  background: #e0b84a;
+}
 
 .btn-secondary {
   background: #2a2a3e;
   color: #e5d5a0;
 }
 
-.btn-secondary:hover:not(:disabled) { background: #3a3a5e; }
+.btn-secondary:hover:not(:disabled) {
+  background: #3a3a5e;
+}
 
 .btn-purchase {
   padding: 10px 24px;

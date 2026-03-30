@@ -27,6 +27,7 @@ export interface Champion {
   onSale: boolean
   owned: boolean
   purchasable: boolean
+  tags: string[]
   // Add an index signature to allow the raw LCU fields
   [key: string]: any
 }

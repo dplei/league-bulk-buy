@@ -18,15 +18,43 @@ export const useLcuStore = defineStore('lcu', () => {
   const filterCurrency = ref<'all' | 'IP' | 'RP'>('IP')
   const searchQuery = ref('')
 
+  // 角色标签过滤
+  const selectedTags = ref<Set<string>>(new Set())
+
+  // 价格范围过滤
+  const priceRanges = ref<{
+    min: number
+    max: number
+  }>({ min: 0, max: Infinity })
+
   const filteredChampions = computed(() => {
     return champions.value.filter((c) => {
+      // 拥有状态过滤
       if (filterOwned.value === 'owned' && !c.owned) return false
       if (filterOwned.value === 'unowned' && c.owned) return false
+
+      // 货币过滤
       if (filterCurrency.value === 'IP' && c.ipPrice === null) return false
       if (filterCurrency.value === 'RP' && c.rpPrice === null) return false
+
+      // 搜索框过滤
       if (searchQuery.value) {
-        return c.name.toLowerCase().includes(searchQuery.value.toLowerCase())
+        const query = searchQuery.value.toLowerCase()
+        if (!c.name.toLowerCase().includes(query)) return false
       }
+
+      // 角色标签过滤
+      if (selectedTags.value.size > 0) {
+        const hasMatchingTag = c.tags?.some((tag) => selectedTags.value.has(tag)) ?? false
+        if (!hasMatchingTag) return false
+      }
+
+      // 价格范围过滤
+      const price = filterCurrency.value === 'RP' ? (c.saleRpPrice ?? c.rpPrice) : (c.saleIpPrice ?? c.ipPrice)
+      if (price !== null && (price < priceRanges.value.min || price > priceRanges.value.max)) {
+        return false
+      }
+
       return true
     })
   })
@@ -97,6 +125,77 @@ export const useLcuStore = defineStore('lcu', () => {
     selectedIds.value.clear()
   }
 
+  function toggleTag(tag: string) {
+    if (selectedTags.value.has(tag)) {
+      selectedTags.value.delete(tag)
+    } else {
+      selectedTags.value.add(tag)
+    }
+  }
+
+  function clearTags() {
+    selectedTags.value.clear()
+  }
+
+  function setPriceRange(min: number, max: number) {
+    priceRanges.value = { min, max }
+  }
+
+  // 清单模板管理
+  interface Template {
+    name: string
+    championIds: number[]
+    date: number
+  }
+
+  const templates = ref<Template[]>([])
+
+  function loadTemplates() {
+    try {
+      const stored = localStorage.getItem('champion-templates')
+      if (stored) {
+        templates.value = JSON.parse(stored)
+      }
+    } catch (err) {
+      console.error('Failed to load templates:', err)
+    }
+  }
+
+  function saveTemplate(name: string, championIds: number[]) {
+    const existingIndex = templates.value.findIndex((t) => t.name === name)
+    const template: Template = {
+      name,
+      championIds,
+      date: Date.now(),
+    }
+
+    if (existingIndex >= 0) {
+      templates.value[existingIndex] = template
+    } else {
+      templates.value.push(template)
+    }
+
+    localStorage.setItem('champion-templates', JSON.stringify(templates.value))
+  }
+
+  function deleteTemplate(name: string) {
+    templates.value = templates.value.filter((t) => t.name !== name)
+    localStorage.setItem('champion-templates', JSON.stringify(templates.value))
+  }
+
+  function applyTemplate(templateName: string) {
+    const template = templates.value.find((t) => t.name === templateName)
+    if (!template) return
+
+    selectedIds.value.clear()
+    template.championIds.forEach((id) => {
+      const champ = champions.value.find((c) => c.itemId === id)
+      if (champ && !champ.owned) {
+        selectedIds.value.add(id)
+      }
+    })
+  }
+
   async function purchaseSelected() {
     if (selectedChampions.value.length === 0) return
 
@@ -119,6 +218,17 @@ export const useLcuStore = defineStore('lcu', () => {
               ? (c.saleRpPrice ?? c.rpPrice ?? 0)
               : (c.saleIpPrice ?? c.ipPrice ?? 0),
         }))
+
+      // 余额防爆破校验
+      const totalCost = items.reduce((sum, item) => sum + item.cost, 0)
+      const currentWallet = currency === 'RP' ? (wallet.value?.rp ?? 0) : (wallet.value?.ip ?? 0)
+
+      if (totalCost > currentWallet) {
+        const shortage = totalCost - currentWallet
+        throw new Error(
+          `余额不足！需要 ${totalCost.toLocaleString()} ${currency}，当前只有 ${currentWallet.toLocaleString()} ${currency}，缺少 ${shortage.toLocaleString()} ${currency}`
+        )
+      }
 
       for (let i = 0; i < items.length; i += BATCH_SIZE) {
         const batch = items.slice(i, i + BATCH_SIZE)
@@ -158,6 +268,9 @@ export const useLcuStore = defineStore('lcu', () => {
     filterOwned,
     filterCurrency,
     searchQuery,
+    selectedTags,
+    priceRanges,
+    templates,
     filteredChampions,
     selectedChampions,
     estimatedCost,
@@ -166,6 +279,13 @@ export const useLcuStore = defineStore('lcu', () => {
     toggleSelect,
     selectAll,
     clearSelection,
+    toggleTag,
+    clearTags,
+    setPriceRange,
+    loadTemplates,
+    saveTemplate,
+    deleteTemplate,
+    applyTemplate,
     purchaseSelected,
   }
 })

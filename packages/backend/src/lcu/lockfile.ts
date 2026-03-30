@@ -1,49 +1,33 @@
-import fs from 'fs'
-import path from 'path'
+import { exec } from 'child_process';
+import { promisify } from 'util';
+
+const execAsync = promisify(exec);
 
 export interface LockfileData {
-  name: string
-  pid: string
-  port: string
-  password: string
-  protocol: string
+  port: string;
+  password: string;
+  protocol: string;
 }
 
-// 常见的 League of Legends 安装路径
-const LOCKFILE_CANDIDATES = [
-  'C:/Riot Games/League of Legends/lockfile',
-  'D:/Riot Games/League of Legends/lockfile',
-  'E:/Riot Games/League of Legends/lockfile',
-  process.env.LEAGUE_PATH ? path.join(process.env.LEAGUE_PATH, 'lockfile') : '',
-].filter(Boolean)
-
-export function findLockfile(): string | null {
-  for (const candidate of LOCKFILE_CANDIDATES) {
-    if (fs.existsSync(candidate)) {
-      return candidate
-    }
-  }
-  return null
-}
-
-export function parseLockfile(filePath: string): LockfileData {
-  const content = fs.readFileSync(filePath, 'utf-8').trim()
-  const [name, pid, port, password, protocol] = content.split(':')
-
-  if (!name || !pid || !port || !password || !protocol) {
-    throw new Error(`Lockfile 格式无效: ${content}`)
+export async function getLockfileData(): Promise<LockfileData> {
+  let stdout: string;
+  try {
+    const result = await execAsync(
+      'wmic process where "name=\'LeagueClientUx.exe\'" get commandline'
+    );
+    stdout = result.stdout;
+  } catch (err) {
+    throw new Error('无法执行 wmic 命令，请确保在 Windows 环境下运行该程序。');
   }
 
-  return { name, pid, port, password, protocol }
-}
+  const portMatch = stdout.match(/--app-port=([0-9]+)/);
+  const passwordMatch = stdout.match(/--remoting-auth-token=([\w-_]+)/);
 
-export function getLockfileData(): LockfileData {
-  const lockfilePath = findLockfile()
-  if (!lockfilePath) {
+  if (!portMatch || !passwordMatch) {
     throw new Error(
-      '找不到 League of Legends 的 lockfile，请确保客户端已启动。\n' +
-      '如果安装在非默认路径，请设置环境变量 LEAGUE_PATH'
-    )
+      '找不到英雄联盟客户端进程 (LeagueClientUx.exe)，请确保客户端已启动并登录。'
+    );
   }
-  return parseLockfile(lockfilePath)
+
+  return { port: portMatch[1], password: passwordMatch[1], protocol: 'https' };
 }

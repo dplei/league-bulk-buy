@@ -9,15 +9,16 @@ export class LcuClient {
   private baseUrl: string
   private authHeader: string
 
-  constructor() {
-    this.lockdata = getLockfileData()
+  private constructor(lockdata: LockfileData) {
+    this.lockdata = lockdata
     this.baseUrl = `https://127.0.0.1:${this.lockdata.port}`
     this.authHeader =
       'Basic ' + Buffer.from(`riot:${this.lockdata.password}`).toString('base64')
   }
 
-  static create(): LcuClient {
-    return new LcuClient()
+  static async create(): Promise<LcuClient> {
+    const lockdata = await getLockfileData()
+    return new LcuClient(lockdata)
   }
 
   async request<T>(method: string, endpoint: string, body?: unknown): Promise<T> {

@@ -4,8 +4,8 @@ import { LcuApi, PurchaseItem } from '../lcu/api.js'
 
 const router = Router()
 
-function createApi() {
-  const client = LcuClient.create()
+async function createApi() {
+  const client = await LcuClient.create()
   return new LcuApi(client)
 }
 
@@ -18,7 +18,7 @@ function handleError(res: Response, err: unknown) {
 // GET /api/status - 检查 LCU 连接状态 + 当前召唤师信息
 router.get('/status', async (_req: Request, res: Response) => {
   try {
-    const api = createApi()
+    const api = await createApi()
     const [summoner, wallet] = await Promise.all([
       api.getSummoner(),
       api.getWallet(),
@@ -32,7 +32,7 @@ router.get('/status', async (_req: Request, res: Response) => {
 // GET /api/champions - 获取商城英雄列表（过滤已拥有）
 router.get('/champions', async (_req: Request, res: Response) => {
   try {
-    const api = createApi()
+    const api = await createApi()
     const [catalog, ownedIds] = await Promise.all([
       api.getChampionCatalog(),
       api.getOwnedChampionIds(),
@@ -94,7 +94,7 @@ router.post('/purchase', async (req: Request, res: Response) => {
       return
     }
 
-    const api = createApi()
+    const api = await createApi()
 
     const purchaseItems: PurchaseItem[] = items.map((item) => ({
       inventoryType: 'CHAMPION',

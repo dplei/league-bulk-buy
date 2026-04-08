@@ -9,8 +9,8 @@ export interface Summoner {
 }
 
 export interface Wallet {
-  ip: number   // 蓝色精华 (Blue Essence)
-  rp: number   // RP
+  ip: number // 蓝色精华 (Blue Essence)
+  rp: number // RP
 }
 
 export interface CatalogItem {
@@ -68,7 +68,7 @@ export interface PurchaseResult {
 }
 
 export class LcuApi {
-  constructor(private client: LcuClient) { }
+  constructor(private client: LcuClient) {}
 
   getSummoner(): Promise<Summoner> {
     return this.client.get('/lol-summoner/v1/current-summoner')

@@ -1,0 +1,15 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npm run:*)",
+      "Bash(cp:*)",
+      "Bash(python3:*)",
+      "Bash(pnpm install:*)",
+      "Bash(grep -E \"^\\(express|cors\\)$\")",
+      "Bash(pnpm run:*)",
+      "Bash(xargs cat:*)",
+      "Bash(node node_modules/electron/install.js)",
+      "Bash(CSC_IDENTITY_AUTO_DISCOVERY=false pnpm run dist)"
+    ]
+  }
+}

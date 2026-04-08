@@ -36,29 +36,17 @@ export interface PurchasePayload {
   items: Array<{ itemId: number; currency: 'IP' | 'RP'; cost: number }>
 }
 
-async function request<T>(url: string, options?: RequestInit): Promise<T> {
-  const res = await fetch(url, options)
-  const data = await res.json()
-  if (!res.ok) {
-    throw new Error(data.error ?? `请求失败: ${res.status}`)
-  }
-  return data as T
-}
-
+// IPC API 调用（通过 Electron 预加载脚本）
 export const api = {
-  getStatus(): Promise<StatusResponse> {
-    return request('/api/status')
+  async getStatus(): Promise<StatusResponse> {
+    return window.electronAPI.getStatus()
   },
 
-  getChampions(): Promise<Champion[]> {
-    return request('/api/champions')
+  async getChampions(): Promise<Champion[]> {
+    return window.electronAPI.getChampions()
   },
 
-  purchase(payload: PurchasePayload) {
-    return request('/api/purchase', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(payload),
-    })
+  async purchase(payload: PurchasePayload): Promise<void> {
+    return window.electronAPI.purchase(payload)
   },
 }

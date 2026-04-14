@@ -7,7 +7,7 @@
     "start": "node dist/index.js"
   },
   "dependencies": {
-    "@leagueakari/league-akari-addons": "file:vendor\\@leagueakari\\league-akari-addons",
+    "@league-bulk-buy/lcu-process-tools": "workspace:*",
     "cors": "^2.8.5",
     "express": "^4.19.2"
   },

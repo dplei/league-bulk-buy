@@ -2,6 +2,7 @@ import { exec } from 'child_process';
 import { promisify } from 'util';
 import fs from 'fs';
 import path from 'path';
+import { getPidsByName, getCommandLine } from '@league-bulk-buy/lcu-process-tools';
 
 const execAsync = promisify(exec);
 
@@ -40,32 +41,25 @@ function parseLockfile(filePath: string): LockfileData {
   return { port, password, protocol };
 }
 
-let addonTools: any = null;
-try {
-  // 尝试使用 LeagueAkari 的 C++ 底层拓展绕过 WMI 和 WeGame 权限拦截读取 PEB 命令行
-  addonTools = require('@leagueakari/league-akari-addons').tools;
-} catch (e) {}
 
 export async function getLockfileData(): Promise<LockfileData> {
-  // 0. 最高优先级方案：通过 C++ 底层拓展直接读取 PEB (绕过管理员限制与 8192 字符截断问题)
-  if (addonTools) {
-    try {
-      const pids = addonTools.getPidsByName('LeagueClientUx.exe');
-      for (const pid of pids) {
-        try {
-          const cmd = addonTools.getCommandLine1(pid);
-          if (cmd) {
-            const portMatch = cmd.match(/--app-port=([0-9]+)/);
-            const passwordMatch = cmd.match(/--remoting-auth-token=([\w-_]+)/);
-            if (portMatch && passwordMatch) {
-              return { port: portMatch[1], password: passwordMatch[1], protocol: 'https' };
-            }
+  // 0. 最高优先级方案：直接读取 PEB 命令行，绕过 WMI 的长度限制及 WeGame 权限拦截
+  try {
+    const pids = getPidsByName('LeagueClientUx.exe');
+    for (const pid of pids) {
+      try {
+        const cmd = getCommandLine(pid);
+        if (cmd) {
+          const portMatch = cmd.match(/--app-port=([0-9]+)/);
+          const passwordMatch = cmd.match(/--remoting-auth-token=([\w-_]+)/);
+          if (portMatch && passwordMatch) {
+            return { port: portMatch[1], password: passwordMatch[1], protocol: 'https' };
           }
-        } catch (err) {}
-      }
-    } catch (e) {
-      // 忽略 C++ 拓展读取错误
+        }
+      } catch (err) {}
     }
+  } catch (e) {
+    // 忽略读取错误，降级到 WMI
   }
 
   // 1. 次选方案：尝试通过 WMI 获取正在运行进程的命令行参数（准确，应对多开）

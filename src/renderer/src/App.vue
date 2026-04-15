@@ -2,8 +2,10 @@
   <n-config-provider :theme="darkTheme" :theme-overrides="themeOverrides">
     <n-message-provider>
       <n-dialog-provider>
-        <TitleBar />
-        <HomeView />
+        <div class="app-layout">
+          <TitleBar />
+          <HomeView />
+        </div>
       </n-dialog-provider>
     </n-message-provider>
   </n-config-provider>
@@ -73,5 +75,16 @@ body {
   background: #0d0d1a;
   color: #e5d5a0;
   font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+  overflow: hidden;
+}
+
+#app {
+  height: 100vh;
+}
+
+.app-layout {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
 }
 </style>

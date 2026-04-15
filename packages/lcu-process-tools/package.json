@@ -1,15 +1,41 @@
 {
   "name": "@league-bulk-buy/lcu-process-tools",
   "version": "1.0.0",
-  "description": "Windows native process utilities for League of Legends client discovery (PEB-based, no C++ addon required)",
+  "description": "Windows native process utilities for League of Legends client discovery (NtQueryInformationProcess, no C++ addon required)",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
+  "files": [
+    "dist/**/*.js",
+    "dist/**/*.d.ts",
+    "dist/**/*.map",
+    "README.md",
+    "LICENSE"
+  ],
   "scripts": {
     "build": "tsc",
-    "dev": "tsc --watch"
+    "dev": "tsc --watch",
+    "prepublishOnly": "npm run build"
   },
-  "keywords": ["league", "lcu", "process", "windows", "koffi", "peb"],
+  "keywords": [
+    "league",
+    "lcu",
+    "league-of-legends",
+    "process",
+    "windows",
+    "koffi",
+    "ntdll",
+    "command-line",
+    "pid"
+  ],
+  "author": "",
   "license": "MIT",
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "os": ["win32"],
+  "publishConfig": {
+    "access": "public"
+  },
   "dependencies": {
     "koffi": "^2.9.0"
   },
@@ -18,3 +44,4 @@
     "typescript": "^5.6.0"
   }
 }
+

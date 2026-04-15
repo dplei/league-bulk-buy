@@ -29,7 +29,13 @@
     </header>
 
     <!-- 错误提示 -->
-    <n-alert v-if="store.error" type="error" :show-icon="true" closable style="margin-bottom: 12px">
+    <n-alert
+      v-if="store.error"
+      type="error"
+      :show-icon="true"
+      closable
+      style="margin-bottom: 12px"
+    >
       {{ store.error }}
     </n-alert>
 
@@ -76,7 +82,9 @@
           清空选择
         </n-button>
         <n-button size="small" secondary @click="showTemplateDrawer = true">
-          📋 我的清单{{ store.templates.length > 0 ? ` (${store.templates.length})` : '' }}
+          📋 我的清单{{
+            store.templates.length > 0 ? ` (${store.templates.length})` : ''
+          }}
         </n-button>
       </div>
 
@@ -114,12 +122,16 @@
               :key="preset.label"
               size="tiny"
               :type="
-                store.priceRanges.min === preset.min && store.priceRanges.max === preset.max
+                store.priceRanges.min === preset.min &&
+                store.priceRanges.max === preset.max
                   ? 'primary'
                   : 'default'
               "
               :secondary="
-                !(store.priceRanges.min === preset.min && store.priceRanges.max === preset.max)
+                !(
+                  store.priceRanges.min === preset.min &&
+                  store.priceRanges.max === preset.max
+                )
               "
               @click="store.setPriceRange(preset.min, preset.max)"
             >
@@ -134,14 +146,16 @@
         <n-spin size="large" />
         <p style="margin-top: 12px">加载英雄列表中...</p>
       </div>
-      <div v-else class="champion-grid">
-        <ChampionCard
-          v-for="champ in store.filteredChampions"
-          :key="champ.itemId"
-          :champion="champ"
-          :is-selected="store.selectedIds.has(champ.itemId)"
-          @toggle="store.toggleSelect"
-        />
+      <div v-else class="grid-container">
+        <div class="champion-grid">
+          <ChampionCard
+            v-for="champ in store.filteredChampions"
+            :key="champ.itemId"
+            :champion="champ"
+            :is-selected="store.selectedIds.has(champ.itemId)"
+            @toggle="store.toggleSelect"
+          />
+        </div>
       </div>
 
       <!-- 底部操作栏 -->
@@ -191,7 +205,12 @@
               placeholder="输入模板名称（如：必买上分池）"
               @keyup.enter="handleSaveTemplate"
             />
-            <n-button type="primary" block style="margin-top: 8px" @click="handleSaveTemplate">
+            <n-button
+              type="primary"
+              block
+              style="margin-top: 8px"
+              @click="handleSaveTemplate"
+            >
               保存模板
             </n-button>
           </div>
@@ -199,7 +218,10 @@
           <!-- 已保存的模板列表 -->
           <div class="templates-list">
             <h3>已保存的模板（{{ store.templates.length }}）</h3>
-            <n-empty v-if="store.templates.length === 0" description="暂无保存的模板" />
+            <n-empty
+              v-if="store.templates.length === 0"
+              description="暂无保存的模板"
+            />
             <div v-else class="template-items">
               <div
                 v-for="template in store.templates"
@@ -214,7 +236,11 @@
                   </div>
                 </div>
                 <n-space :size="6">
-                  <n-button size="tiny" secondary @click="handleApplyTemplate(template.name)">
+                  <n-button
+                    size="tiny"
+                    secondary
+                    @click="handleApplyTemplate(template.name)"
+                  >
                     应用
                   </n-button>
                   <n-button
@@ -236,7 +262,7 @@
 </template>
 
 <script setup lang="ts">
-import { onMounted, ref } from 'vue'
+import { onMounted, ref } from 'vue';
 import {
   NButton,
   NInput,
@@ -250,27 +276,27 @@ import {
   NEmpty,
   useMessage,
   useDialog
-} from 'naive-ui'
-import { useLcuStore } from '../stores/lcu'
-import ChampionCard from './ChampionCard.vue'
+} from 'naive-ui';
+import { useLcuStore } from '../stores/lcu';
+import ChampionCard from './ChampionCard.vue';
 
-const store = useLcuStore()
-const message = useMessage()
-const dialog = useDialog()
-const showTemplateDrawer = ref(false)
-const newTemplateName = ref('')
+const store = useLcuStore();
+const message = useMessage();
+const dialog = useDialog();
+const showTemplateDrawer = ref(false);
+const newTemplateName = ref('');
 
 const ownedOptions = [
   { label: '全部', value: 'all' },
   { label: '未拥有', value: 'unowned' },
   { label: '已拥有', value: 'owned' }
-]
+];
 
 const currencyOptions = [
   { label: '全部', value: 'all' },
   { label: '精粹', value: 'IP' },
   { label: 'RP', value: 'RP' }
-]
+];
 
 const roleTagPresets = [
   { label: '战士', value: 'Fighter' },
@@ -279,7 +305,7 @@ const roleTagPresets = [
   { label: '法师', value: 'Mage' },
   { label: '坦克', value: 'Tank' },
   { label: '刺客', value: 'Assassin' }
-]
+];
 
 const pricePresets = [
   { label: '全部价格', min: 0, max: Infinity },
@@ -287,13 +313,13 @@ const pricePresets = [
   { label: '3150-4800 精粹', min: 3150, max: 4800 },
   { label: '4800-6300 精粹', min: 4800, max: 6300 },
   { label: '>6300 精粹', min: 6300, max: Infinity }
-]
+];
 
 async function refreshAll() {
-  await store.checkStatus()
+  await store.checkStatus();
   if (store.connected) {
-    await store.loadChampions()
-    store.loadTemplates()
+    await store.loadChampions();
+    store.loadTemplates();
   }
 }
 
@@ -304,25 +330,25 @@ async function handlePurchase() {
     positiveText: '确认购买',
     negativeText: '取消',
     onPositiveClick: async () => {
-      await store.purchaseSelected()
-      message.success('购买流程已启动，请查看日志')
+      await store.purchaseSelected();
+      message.success('购买流程已启动，请查看日志');
     }
-  })
+  });
 }
 
 function handleSaveTemplate() {
   if (!newTemplateName.value.trim()) {
-    message.error('请输入模板名称')
-    return
+    message.error('请输入模板名称');
+    return;
   }
-  store.saveTemplate(newTemplateName.value, Array.from(store.selectedIds))
-  message.success(`模板 "${newTemplateName.value}" 已保存`)
-  newTemplateName.value = ''
+  store.saveTemplate(newTemplateName.value, Array.from(store.selectedIds));
+  message.success(`模板 "${newTemplateName.value}" 已保存`);
+  newTemplateName.value = '';
 }
 
 function handleApplyTemplate(templateName: string) {
-  store.applyTemplate(templateName)
-  message.info(`已应用模板 "${templateName}"`)
+  store.applyTemplate(templateName);
+  message.info(`已应用模板 "${templateName}"`);
 }
 
 function handleDeleteTemplate(templateName: string) {
@@ -332,13 +358,13 @@ function handleDeleteTemplate(templateName: string) {
     positiveText: '删除',
     negativeText: '取消',
     onPositiveClick: () => {
-      store.deleteTemplate(templateName)
-      message.success('模板已删除')
+      store.deleteTemplate(templateName);
+      message.success('模板已删除');
     }
-  })
+  });
 }
 
-onMounted(refreshAll)
+onMounted(refreshAll);
 </script>
 
 <style scoped>
@@ -347,8 +373,10 @@ onMounted(refreshAll)
   max-width: 1400px;
   margin: 0 auto;
   padding: 16px;
-  overflow-y: auto;
   width: 100%;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
 }
 
 .header {
@@ -359,6 +387,7 @@ onMounted(refreshAll)
   padding: 12px 16px;
   background: #16213e;
   border-radius: 8px;
+  flex-shrink: 0;
 }
 
 .header-left {
@@ -410,6 +439,7 @@ onMounted(refreshAll)
   text-align: center;
   padding: 60px 20px;
   color: #666;
+  flex: 1;
 }
 
 .not-connected p {
@@ -430,12 +460,20 @@ onMounted(refreshAll)
   background: #16213e;
   border-radius: 8px;
   flex-wrap: wrap;
+  flex-shrink: 0;
 }
 
 .loading {
   text-align: center;
   padding: 40px;
   color: #666;
+  flex: 1;
+}
+
+.grid-container {
+  flex: 1;
+  overflow-y: auto;
+  min-height: 0; /* needed for flex child scrolling */
 }
 
 .champion-grid {
@@ -492,6 +530,7 @@ onMounted(refreshAll)
   border-radius: 8px;
   padding: 12px;
   margin-bottom: 16px;
+  flex-shrink: 0;
 }
 
 .filter-section {

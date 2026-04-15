@@ -2,7 +2,7 @@ import { exec } from 'child_process';
 import { promisify } from 'util';
 import fs from 'fs';
 import path from 'path';
-import { getPidsByName, getCommandLine } from '@league-bulk-buy/lcu-process-tools';
+import { getPidsByName, getCommandLine, getProcessImagePath } from '@league-bulk-buy/lcu-process-tools';
 
 const execAsync = promisify(exec);
 
@@ -55,8 +55,18 @@ export async function getLockfileData(): Promise<LockfileData> {
           if (portMatch && passwordMatch) {
             return { port: portMatch[1], password: passwordMatch[1], protocol: 'https' };
           }
+        } else {
+          // 由于权限问题无法直接读取命令行时，尝试获取进程执行路径，借此推断 lockfile 路径
+          const exePath = getProcessImagePath(pid);
+          if (exePath) {
+            const cleanPath = exePath.replace(/\0/g, '').trim();
+            const lockfilePath = path.join(path.dirname(cleanPath), 'lockfile');
+            if (fs.existsSync(lockfilePath)) {
+              return parseLockfile(lockfilePath);
+            }
+          }
         }
-      } catch (err) {}
+      } catch (err) { }
     }
   } catch (e) {
     // 忽略读取错误，降级到 WMI

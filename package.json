@@ -4,6 +4,7 @@
   "private": true,
   "scripts": {
     "dev": "concurrently \"pnpm --filter backend dev\" \"pnpm --filter frontend dev\"",
+    "dev:admin": "powershell -Command \"Start-Process powershell -ArgumentList \\\"-NoExit -Command cd '$env:INIT_CWD'; pnpm dev\\\" -Verb RunAs\"",
     "build": "pnpm --filter backend build && pnpm --filter frontend build"
   },
   "devDependencies": {

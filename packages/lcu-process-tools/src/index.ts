@@ -2,15 +2,16 @@
  * @league-bulk-buy/lcu-process-tools
  *
  * Windows-only native process utilities for discovering running League of Legends
- * client processes and reading their full command-line arguments directly from the
- * PEB (Process Environment Block) via NtQueryInformationProcess.
+ * client processes and reading their full command-line arguments via
+ * NtQueryInformationProcess(ProcessCommandLineInformation).
  *
- * This replaces the need for any precompiled C++ Node.js addon. It uses `koffi`
- * (a pure-JS FFI library) to call kernel32.dll / ntdll.dll directly, bypassing:
- *  - WMI CommandLine truncation at 8192 chars (common with WeGame installs)
- *  - WMI access denial when the process was started with elevated privileges
+ * Key advantage over the PEB memory-reading approach:
+ *  - Only requires PROCESS_QUERY_LIMITED_INFORMATION (0x1000)
+ *  - Does NOT require PROCESS_VM_READ or elevated privileges
+ *  - Works even when the target process is started by WeGame with admin rights
  *
- * Only works on Windows x64.
+ * This is the same technique used by LeagueAkari's native C++ addon (getCommandLine1).
+ * Only works on Windows x64, Windows 8.1+.
  */
 
 import koffi from 'koffi';
@@ -22,7 +23,6 @@ koffi.alias('HANDLE', 'void *');
 koffi.alias('PVOID', 'void *');
 koffi.alias('DWORD', 'uint32_t');
 koffi.alias('ULONG', 'uint32_t');
-koffi.alias('USHORT', 'uint16_t');
 koffi.alias('NTSTATUS', 'int32_t');
 
 // ---------------------------------------------------------------------------
@@ -34,9 +34,6 @@ const OpenProcess = kernel32.func(
   'HANDLE __stdcall OpenProcess(DWORD dwDesiredAccess, int bInheritHandle, DWORD dwProcessId)'
 );
 const CloseHandle = kernel32.func('int __stdcall CloseHandle(HANDLE hObject)');
-const ReadProcessMemory = kernel32.func(
-  'int __stdcall ReadProcessMemory(HANDLE hProcess, PVOID lpBaseAddress, void *lpBuffer, size_t nSize, size_t *lpNumberOfBytesRead)'
-);
 const CreateToolhelp32Snapshot = kernel32.func(
   'HANDLE __stdcall CreateToolhelp32Snapshot(DWORD dwFlags, DWORD th32ProcessID)'
 );
@@ -45,6 +42,9 @@ const Process32First = kernel32.func(
 );
 const Process32Next = kernel32.func(
   'int __stdcall Process32Next(HANDLE hSnapshot, void *lppe)'
+);
+const QueryFullProcessImageNameW = kernel32.func(
+  'int __stdcall QueryFullProcessImageNameW(HANDLE hProcess, DWORD dwFlags, _Out_ void *lpExeName, _Inout_ DWORD *lpdwSize)'
 );
 
 // ---------------------------------------------------------------------------
@@ -61,22 +61,8 @@ const NtQueryInformationProcess = ntdll.func(
 // ---------------------------------------------------------------------------
 
 /**
- * PROCESS_BASIC_INFORMATION (64-bit layout)
- * https://learn.microsoft.com/en-us/windows/win32/api/winternl/nf-winternl-ntqueryinformationprocess
+ * PROCESSENTRY32 — ANSI variant (Process32First/Process32Next), 64-bit safe.
  */
-const PROCESS_BASIC_INFORMATION = koffi.struct('PROCESS_BASIC_INFORMATION', {
-  Reserved1: 'PVOID',
-  PebBaseAddress: 'PVOID',
-  Reserved2: 'PVOID[2]',
-  UniqueProcessId: 'ULONG',
-  Reserved3: 'PVOID',
-});
-
-/**
- * PROCESSENTRY32W — 64-bit safe (szExeFile is always char[260] in ANSI variant)
- * We use the ANSI variant (Process32First/Process32Next) for simplicity.
- */
-const PROCESSENTRY32_SIZE = 4 + 4 + 4 + 8 + 4 + 4 + 4 + 4 + 4 + 260; // 304 bytes
 const PROCESSENTRY32 = koffi.struct('PROCESSENTRY32', {
   dwSize: 'DWORD',
   cntUsage: 'DWORD',
@@ -94,13 +80,23 @@ const PROCESSENTRY32 = koffi.struct('PROCESSENTRY32', {
 // Constants
 // ---------------------------------------------------------------------------
 const TH32CS_SNAPPROCESS = 0x00000002;
-const PROCESS_QUERY_INFORMATION = 0x0400;
-const PROCESS_VM_READ = 0x0010;
-const ProcessBasicInformation = 0;
 
-// PEB offsets (x64 Windows 10/11)
-const PEB_OFFSET_RTL_PARAMS = 0x20n; // RTL_USER_PROCESS_PARAMETERS* pointer
-const RTL_PARAMS_OFFSET_CMDLINE = 0x70n; // UNICODE_STRING CommandLine
+/**
+ * Only needs PROCESS_QUERY_LIMITED_INFORMATION — no admin required!
+ * Works even against processes running at higher integrity levels.
+ */
+const PROCESS_QUERY_LIMITED_INFORMATION = 0x1000;
+
+/**
+ * ProcessCommandLineInformation (class 60 / 0x3C):
+ * Retrieves the command-line string of a process without needing to read
+ * the target process's memory directly (no PROCESS_VM_READ required).
+ * Available since Windows 8.1 / Server 2012 R2.
+ *
+ * Reference:
+ *   https://learn.microsoft.com/en-us/windows/win32/api/winternl/nf-winternl-ntqueryinformationprocess
+ */
+const ProcessCommandLineInformation = 60;
 
 // ---------------------------------------------------------------------------
 // Public API
@@ -126,7 +122,6 @@ export function getPidsByName(exeName: string): number[] {
   let ok = Process32First(hSnapshot, buf);
   while (ok !== 0) {
     const entry = koffi.decode(buf, PROCESSENTRY32);
-    // szExeFile is a C string (null-terminated) decoded as Buffer/array
     const rawBytes = Buffer.from(entry.szExeFile as unknown as Uint8Array);
     const nullIdx = rawBytes.indexOf(0);
     const name = rawBytes.toString('utf8', 0, nullIdx !== -1 ? nullIdx : rawBytes.length);
@@ -143,67 +138,87 @@ export function getPidsByName(exeName: string): number[] {
 }
 
 /**
- * Reads the full command-line string of a process by its PID directly from
- * the PEB, bypassing WMI. This handles:
- *  - WeGame command lines > 8192 characters (not truncated)
- *  - Processes started with elevated privileges (as long as we also have
- *    appropriate read access — run as admin if needed)
+ * Reads the full command-line string of a process by its PID using
+ * NtQueryInformationProcess(ProcessCommandLineInformation = 60).
  *
- * Returns `null` if the process cannot be opened or read.
+ * This approach only requires PROCESS_QUERY_LIMITED_INFORMATION (0x1000),
+ * so it works even when the target process runs at a higher integrity level
+ * (e.g. launched by WeGame as Administrator) — **no admin mode needed**.
+ *
+ * This is the same technique as LeagueAkari's native addon `getCommandLine1`.
+ *
+ * Returns `null` if the process cannot be opened or queried.
  */
 export function getCommandLine(pid: number): string | null {
-  const hProcess = OpenProcess(PROCESS_QUERY_INFORMATION | PROCESS_VM_READ, 0, pid);
+  const hProcess = OpenProcess(PROCESS_QUERY_LIMITED_INFORMATION, 0, pid);
   if (!hProcess) return null;
 
   try {
-    // Step 1: NtQueryInformationProcess → get PEB base address
-    const pbiSize = koffi.sizeof(PROCESS_BASIC_INFORMATION);
-    const pbiBuffer = Buffer.alloc(pbiSize);
-    const returnLength = [0];
+    const returnLengthBuf = Buffer.alloc(4);
 
+    // Step 1: Call with zero-length buffer to discover the required buffer size.
+    //         The call returns a non-zero status (STATUS_INFO_LENGTH_MISMATCH)
+    //         but still fills returnLengthBuf with the required byte count.
+    NtQueryInformationProcess(
+      hProcess,
+      ProcessCommandLineInformation,
+      null,
+      0,
+      returnLengthBuf
+    );
+
+    const requiredLen = returnLengthBuf.readUInt32LE(0);
+    if (requiredLen === 0) return null;
+
+    // Step 2: Second call with a properly sized buffer.
+    const infoBuf = Buffer.alloc(requiredLen);
     const status: number = NtQueryInformationProcess(
       hProcess,
-      ProcessBasicInformation,
-      pbiBuffer,
-      pbiSize,
-      returnLength
+      ProcessCommandLineInformation,
+      infoBuf,
+      requiredLen,
+      returnLengthBuf
     );
 
     if (status !== 0) return null;
 
-    const pbi = koffi.decode(pbiBuffer, PROCESS_BASIC_INFORMATION);
-    if (!pbi?.PebBaseAddress) return null;
+    // The returned buffer contains a UNICODE_STRING structure:
+    //   USHORT Length        [0..1]  — string byte length (UTF-16LE)
+    //   USHORT MaximumLength [2..3]
+    //   ULONG  Padding       [4..7]  — alignment padding on x64
+    //   PVOID  Buffer        [8..15] — pointer (into our infoBuf at offset 16)
+    // Immediately followed by the actual string data starting at byte offset 16.
+    const strByteLen = infoBuf.readUInt16LE(0);
+    if (strByteLen === 0) return null;
 
-    const pebBase: bigint = koffi.address(pbi.PebBaseAddress);
+    return infoBuf.toString('utf16le', 16, 16 + strByteLen);
+  } catch {
+    return null;
+  } finally {
+    CloseHandle(hProcess);
+  }
+}
 
-    // Step 2: Read PEB → RTL_USER_PROCESS_PARAMETERS pointer
-    const rtlParamsPtrBuf = Buffer.alloc(8);
-    if (!ReadProcessMemory(hProcess, pebBase + PEB_OFFSET_RTL_PARAMS, rtlParamsPtrBuf, 8, null)) {
-      return null;
+/**
+ * Gets the full executable path for the given process PID using
+ * QueryFullProcessImageNameW. Only requires PROCESS_QUERY_LIMITED_INFORMATION.
+ *
+ * Returns `null` if the process cannot be opened or queried.
+ */
+export function getProcessImagePath(pid: number): string | null {
+  const hProcess = OpenProcess(PROCESS_QUERY_LIMITED_INFORMATION, 0, pid);
+  if (!hProcess) return null;
+
+  try {
+    const buf = Buffer.alloc(1024);
+    const sizeBuf = Buffer.alloc(4);
+    sizeBuf.writeUInt32LE(512, 0); // max 512 wide chars = 1024 bytes
+
+    if (QueryFullProcessImageNameW(hProcess, 0, buf, sizeBuf)) {
+      const charCount = sizeBuf.readUInt32LE(0);
+      return buf.toString('utf16le', 0, charCount * 2);
     }
-    const pRtlParams = rtlParamsPtrBuf.readBigUInt64LE(0);
-
-    // Step 3: Read RTL_USER_PROCESS_PARAMETERS → CommandLine (UNICODE_STRING)
-    // UNICODE_STRING layout: Length (USHORT, 2), MaximumLength (USHORT, 2), [4 bytes pad], Buffer (PVOID/8)
-    const unicodeStringBuf = Buffer.alloc(16);
-    if (
-      !ReadProcessMemory(hProcess, pRtlParams + RTL_PARAMS_OFFSET_CMDLINE, unicodeStringBuf, 16, null)
-    ) {
-      return null;
-    }
-
-    const cmdLineLength = unicodeStringBuf.readUInt16LE(0); // in bytes (UTF-16LE)
-    const cmdLinePtr = unicodeStringBuf.readBigUInt64LE(8);
-
-    if (cmdLineLength === 0 || cmdLinePtr === 0n) return null;
-
-    // Step 4: Read the actual command line string
-    const cmdBuf = Buffer.alloc(cmdLineLength);
-    if (!ReadProcessMemory(hProcess, cmdLinePtr, cmdBuf, cmdLineLength, null)) {
-      return null;
-    }
-
-    return cmdBuf.toString('utf16le');
+    return null;
   } catch {
     return null;
   } finally {

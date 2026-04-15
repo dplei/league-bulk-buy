@@ -1,7 +1,7 @@
 import https from 'https'
-import { getLockfileData, LockfileData } from './lockfile.js'
+import { getLockfileData, LockfileData } from './LockfileResolver'
 
-// 忽略 LCU 的自签名证书 (Node 原生 fetch 不支持 https.Agent，设置环境变量忽略全局 TLS)
+// 忽略 LCU 的自签名证书
 process.env.NODE_TLS_REJECT_UNAUTHORIZED = '0'
 
 export class LcuClient {
@@ -29,8 +29,8 @@ export class LcuClient {
       headers: {
         Authorization: this.authHeader,
         'Content-Type': 'application/json',
-        Accept: 'application/json',
-      },
+        Accept: 'application/json'
+      }
     }
 
     if (body !== undefined) {

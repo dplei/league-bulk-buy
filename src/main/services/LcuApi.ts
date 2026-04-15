@@ -1,4 +1,4 @@
-import { LcuClient } from './client.js'
+import { LcuClient } from './LcuClient'
 
 export interface Summoner {
   displayName: string
@@ -9,8 +9,8 @@ export interface Summoner {
 }
 
 export interface Wallet {
-  ip: number   // 蓝色精华 (Blue Essence)
-  rp: number   // RP
+  ip: number // 蓝色精华 (Blue Essence)
+  rp: number // RP
 }
 
 export interface CatalogItem {
@@ -47,11 +47,11 @@ export interface CatalogItem {
 
 export interface PurchaseItem {
   itemKey: {
-    inventoryType: string // e.g., 'CHAMPION'
+    inventoryType: string
     itemId: number
   }
   purchaseCurrencyInfo: {
-    currencyType: string // e.g., 'IP' or 'RP'
+    currencyType: string
     price: number
     purchasable: boolean
   }
@@ -68,7 +68,7 @@ export interface PurchaseResult {
 }
 
 export class LcuApi {
-  constructor(private client: LcuClient) { }
+  constructor(private client: LcuClient) {}
 
   getSummoner(): Promise<Summoner> {
     return this.client.get('/lol-summoner/v1/current-summoner')
@@ -77,18 +77,16 @@ export class LcuApi {
   async getWallet(): Promise<Wallet> {
     const [ipRes, rpRes] = await Promise.all([
       this.client.get<{ lol_blue_essence: number }>('/lol-inventory/v1/wallet/IP'),
-      this.client.get<{ RP: number }>('/lol-inventory/v1/wallet/RP'),
+      this.client.get<{ RP: number }>('/lol-inventory/v1/wallet/RP')
     ])
     return {
       ip: ipRes.lol_blue_essence || 0,
-      rp: rpRes.RP || 0,
+      rp: rpRes.RP || 0
     }
   }
 
   async getChampionCatalog(): Promise<CatalogItem[]> {
-    const all = await this.client.get<CatalogItem[]>(
-      '/lol-catalog/v1/items/CHAMPION'
-    )
+    const all = await this.client.get<CatalogItem[]>('/lol-catalog/v1/items/CHAMPION')
     return all
   }
 

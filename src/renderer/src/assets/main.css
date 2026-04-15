@@ -1,12 +1,3 @@
-<template>
-  <HomeView />
-</template>
-
-<script setup lang="ts">
-import HomeView from './views/HomeView.vue'
-</script>
-
-<style>
 * {
   box-sizing: border-box;
   margin: 0;
@@ -18,6 +9,13 @@ body {
   color: #e5d5a0;
   font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
   min-height: 100vh;
+  overflow: hidden;
+}
+
+#app {
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
 }
 
 ::-webkit-scrollbar {
@@ -32,4 +30,3 @@ body {
   background: #3a3a5e;
   border-radius: 3px;
 }
-</style>

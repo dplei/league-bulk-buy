@@ -1,16 +1,44 @@
 {
   "name": "league-bulk-buy",
-  "description": "Bulk buy tool for League of Legends",
+  "version": "1.0.0",
+  "description": "League of Legends Bulk Buy Tool - Electron App",
+  "main": "./out/main/index.js",
+  "author": "",
   "private": true,
   "scripts": {
-    "dev": "concurrently \"pnpm --filter backend dev\" \"pnpm --filter frontend dev\"",
-    "dev:admin": "powershell -Command \"Start-Process powershell -ArgumentList \\\"-NoExit -Command cd '$env:INIT_CWD'; pnpm dev\\\" -Verb RunAs\"",
-    "build": "pnpm --filter backend build && pnpm --filter frontend build"
+    "dev": "electron-vite dev",
+    "dev:admin": "powershell -Command \"Start-Process cmd -ArgumentList ('/k cd /d \\\"' + $PWD.Path + '\\\" && pnpm run dev') -Verb RunAs\"",
+    "build": "electron-vite build",
+    "postinstall": "electron-builder install-app-deps",
+    "build:unpack": "pnpm run build && electron-builder --dir",
+    "build:win": "pnpm run build && electron-builder --win"
+  },
+  "dependencies": {
+    "@electron-toolkit/preload": "^3.0.2",
+    "@electron-toolkit/utils": "^4.0.0",
+    "@league-bulk-buy/lcu-process-tools": "^1.0.0",
+    "naive-ui": "^2.44.1"
   },
   "devDependencies": {
-    "concurrently": "^9.0.0"
+    "@electron-toolkit/tsconfig": "^2.0.0",
+    "@types/node": "^22.19.1",
+    "@vitejs/plugin-vue": "^6.0.2",
+    "electron": "^39.2.6",
+    "electron-builder": "^26.0.12",
+    "electron-vite": "^5.0.0",
+    "pinia": "^2.2.0",
+    "typescript": "^5.9.3",
+    "vite": "^7.2.6",
+    "vue": "^3.5.25",
+    "vue-tsc": "^3.1.6"
   },
   "pnpm": {
-    "onlyBuiltDependencies": ["esbuild", "koffi"]
+    "onlyBuiltDependencies": [
+      "esbuild",
+      "electron",
+      "electron-winstaller",
+      "koffi",
+      "vue-demi"
+    ]
   }
 }

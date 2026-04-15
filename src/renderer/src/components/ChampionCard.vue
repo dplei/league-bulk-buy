@@ -4,7 +4,7 @@
     :class="{
       selected: isSelected,
       owned: champion.owned,
-      'on-sale': champion.onSale,
+      'on-sale': champion.onSale
     }"
     @click="!champion.owned && $emit('toggle', champion.itemId)"
   >
@@ -15,8 +15,8 @@
         loading="lazy"
         @error="onImgError"
       />
-      <div v-if="champion.owned" class="owned-badge">已拥有</div>
-      <div v-if="champion.onSale" class="sale-badge">折扣</div>
+      <div v-if="champion.owned" class="badge owned-badge">已拥有</div>
+      <div v-if="champion.onSale" class="badge sale-badge">折扣</div>
       <div v-if="isSelected" class="check-mark">✓</div>
     </div>
 
@@ -37,9 +37,9 @@
 </template>
 
 <script setup lang="ts">
-import { Champion } from '../api/index.js'
+import type { Champion } from '../../../preload/index.d'
 
-const props = defineProps<{
+defineProps<{
   champion: Champion
   isSelected: boolean
 }>()
@@ -95,8 +95,7 @@ function onImgError(e: Event) {
   object-fit: cover;
 }
 
-.owned-badge,
-.sale-badge,
+.badge,
 .check-mark {
   position: absolute;
   top: 4px;

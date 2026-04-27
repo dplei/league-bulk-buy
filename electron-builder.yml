@@ -26,3 +26,6 @@ nsis:
 npmRebuild: false
 electronDownload:
   mirror: https://npmmirror.com/mirrors/electron/
+publish:
+  provider: github
+  releaseType: release

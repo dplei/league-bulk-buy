@@ -1,6 +1,7 @@
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
 import type { Champion, Summoner, Wallet } from '../../../preload/index.d'
+import { purchaseInBatches } from '../utils/purchaseBatch'
 
 export interface Template {
   name: string
@@ -193,8 +194,6 @@ export const useLcuStore = defineStore('lcu', () => {
     error.value = null
 
     try {
-      // 分批购买，每批最多 10 个
-      const BATCH_SIZE = 10
       const currency = filterCurrency.value === 'RP' ? 'RP' : 'IP'
 
       const items = selectedChampions.value
@@ -220,33 +219,27 @@ export const useLcuStore = defineStore('lcu', () => {
         )
       }
 
-      for (let i = 0; i < items.length; i += BATCH_SIZE) {
-        const batch = items.slice(i, i + BATCH_SIZE)
-        const batchNames = batch.map(
-          (b) =>
-            champions.value.find((c) => c.itemId === b.itemId)?.name ?? b.itemId
-        )
+      await purchaseInBatches(
+        items,
+        (batch) => window.api.purchase(batch),
+        ({ index, batch, done, total }) => {
+          const names = batch.map(
+            (b) => champions.value.find((c) => c.itemId === b.itemId)?.name ?? b.itemId
+          )
+          purchaseLog.value.push(`✓ 批次 ${index}（${done}/${total}）: ${names.join('、')}`)
+        }
+      )
 
-        purchaseLog.value.push(
-          `购买批次 ${Math.floor(i / BATCH_SIZE) + 1}: ${batchNames.join(', ')}`
-        )
-
-        await window.api.purchase(batch)
-
-        purchaseLog.value.push(
-          `✓ 批次 ${Math.floor(i / BATCH_SIZE) + 1} 购买成功`
-        )
-      }
-
-      // 刷新钱包和英雄列表
-      await Promise.all([checkStatus(), loadChampions()])
-      selectedIds.value.clear()
       purchaseLog.value.push('全部购买完成！')
     } catch (err) {
       error.value = err instanceof Error ? err.message : '购买失败'
       purchaseLog.value.push(`✗ 错误: ${error.value}`)
     } finally {
       purchasing.value = false
+      // 中途失败时前几批已经买成了，钱包和拥有状态照样要刷新
+      await Promise.all([checkStatus(), loadChampions()])
+      const owned = new Set(champions.value.filter((c) => c.owned).map((c) => c.itemId))
+      selectedIds.value = new Set([...selectedIds.value].filter((id) => !owned.has(id)))
     }
   }
 

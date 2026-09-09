@@ -40,6 +40,9 @@ const bulkBuyService = new BulkBuyService();
 
 app.whenReady().then(() => {
   electronApp.setAppUserModelId('com.leaguebulkbuy.app');
+  bulkBuyService.initializeChampionPositions(
+    join(app.getPath('userData'), 'champion-positions.json')
+  );
 
   app.on('browser-window-created', (_, window) => {
     optimizer.watchWindowShortcuts(window);

@@ -1,6 +1,12 @@
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
-import type { Champion, Summoner, Wallet } from '../../preload/index.d'
+import type { Champion, Summoner, Wallet } from '../../../preload/index.d'
+
+export interface Template {
+  name: string
+  championIds: number[]
+  date: number
+}
 
 export const useLcuStore = defineStore('lcu', () => {
   const connected = ref(false)
@@ -17,9 +23,7 @@ export const useLcuStore = defineStore('lcu', () => {
   const filterOwned = ref<'all' | 'owned' | 'unowned'>('unowned')
   const filterCurrency = ref<'all' | 'IP' | 'RP'>('IP')
   const searchQuery = ref('')
-
-  // 角色标签过滤
-  const selectedTags = ref<Set<string>>(new Set())
+  const filterPosition = ref<'all' | 'top' | 'jungle' | 'middle' | 'bottom' | 'support'>('all')
 
   // 价格范围过滤
   const priceRanges = ref<{ min: number; max: number }>({ min: 0, max: Infinity })
@@ -40,11 +44,7 @@ export const useLcuStore = defineStore('lcu', () => {
         if (!c.name.toLowerCase().includes(query)) return false
       }
 
-      // 角色标签过滤
-      if (selectedTags.value.size > 0) {
-        const hasMatchingTag = c.tags?.some((tag) => selectedTags.value.has(tag)) ?? false
-        if (!hasMatchingTag) return false
-      }
+      if (filterPosition.value !== 'all' && !c.positions.includes(filterPosition.value)) return false
 
       // 价格范围过滤
       const price =
@@ -132,29 +132,11 @@ export const useLcuStore = defineStore('lcu', () => {
     selectedIds.value.clear()
   }
 
-  function toggleTag(tag: string) {
-    if (selectedTags.value.has(tag)) {
-      selectedTags.value.delete(tag)
-    } else {
-      selectedTags.value.add(tag)
-    }
-  }
-
-  function clearTags() {
-    selectedTags.value.clear()
-  }
-
   function setPriceRange(min: number, max: number) {
     priceRanges.value = { min, max }
   }
 
   // 清单模板管理
-  interface Template {
-    name: string
-    championIds: number[]
-    date: number
-  }
-
   const templates = ref<Template[]>([])
 
   function loadTemplates() {
@@ -280,8 +262,8 @@ export const useLcuStore = defineStore('lcu', () => {
     purchaseLog,
     filterOwned,
     filterCurrency,
+    filterPosition,
     searchQuery,
-    selectedTags,
     priceRanges,
     templates,
     filteredChampions,
@@ -292,8 +274,6 @@ export const useLcuStore = defineStore('lcu', () => {
     toggleSelect,
     selectAll,
     clearSelection,
-    toggleTag,
-    clearTags,
     setPriceRange,
     loadTemplates,
     saveTemplate,

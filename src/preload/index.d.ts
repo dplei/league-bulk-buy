@@ -12,6 +12,7 @@ export interface Champion {
   owned: boolean
   purchasable: boolean
   tags: string[]
+  positions: Array<'top' | 'jungle' | 'middle' | 'bottom' | 'support'>
   [key: string]: any
 }
 

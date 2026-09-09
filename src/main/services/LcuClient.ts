@@ -1,4 +1,3 @@
-import https from 'https'
 import { getLockfileData, LockfileData } from './LockfileResolver'
 
 // 忽略 LCU 的自签名证书

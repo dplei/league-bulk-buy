@@ -1,0 +1,7 @@
+# pnpm 10 起不再读 package.json 的 pnpm 字段，构建脚本白名单挪到这里
+onlyBuiltDependencies:
+  - electron
+  - electron-winstaller
+  - esbuild
+  - koffi
+  - vue-demi

@@ -59,7 +59,7 @@ jobs:
           files: |
             dist/*.exe
             dist/*.exe.blockmap
-            dist/*.yml
+            dist/latest.yml
           body: ${{ steps.changelog.outputs.notes }}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

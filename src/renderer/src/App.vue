@@ -7,6 +7,7 @@
           <main class="app-main">
             <HomeView />
           </main>
+          <UpdateNotice />
         </div>
       </n-dialog-provider>
     </n-message-provider>
@@ -18,6 +19,7 @@ import { darkTheme, NConfigProvider, NMessageProvider, NDialogProvider } from 'n
 import type { GlobalThemeOverrides } from 'naive-ui'
 import TitleBar from './components/TitleBar.vue'
 import HomeView from './components/HomeView.vue'
+import UpdateNotice from './components/UpdateNotice.vue'
 
 const themeOverrides: GlobalThemeOverrides = {
   common: {

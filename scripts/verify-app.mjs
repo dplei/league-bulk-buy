@@ -1,6 +1,6 @@
 /**
- * 五路筛选验证脚本 — 启动 Electron，校验位置缓存与分路筛选
- * 用法: pnpm run build && node scripts/verify-positions.mjs
+ * 冒烟验证脚本 — 启动 Electron，校验分路缓存筛选与自动更新 IPC
+ * 用法: pnpm run build && node scripts/verify-app.mjs
  */
 import assert from 'node:assert/strict'
 import path from 'node:path'
@@ -40,6 +40,30 @@ for (const [index, lane] of LANES.entries()) {
 }
 
 await page.locator('.filter-section', { hasText: '分路' }).locator('button').first().click()
-await page.screenshot({ path: path.join(ROOT, 'scripts', 'verify-positions.png') })
-console.log('PASS — 分路数据与筛选正常')
+
+// 自动更新：开发/未打包环境下不应真的去检查，但 IPC 链路要通
+const version = await page.evaluate(() => window.api.getAppVersion())
+assert.match(version, /^\d+\.\d+\.\d+/, `版本号异常: ${version}`)
+const check = await page.evaluate(() => window.api.checkUpdate())
+assert.equal(check.ok, false, '未打包时不应真的检查更新')
+console.log(`更新 IPC 正常：v${version}，${check.message}`)
+
+// 伪造一次“发现新版本”事件，验证更新弹窗与更新日志渲染
+await app.evaluate(({ BrowserWindow }, payload) => {
+  BrowserWindow.getAllWindows()[0].webContents.send('updater:status', payload)
+}, {
+  state: 'available',
+  version: '9.9.9',
+  notes: [{ version: '9.9.9', note: '- feat: 假的更新日志\n- fix: 仅用于验证弹窗' }]
+})
+await page.locator('.n-modal').waitFor({ state: 'visible', timeout: 5000 })
+await page.waitForTimeout(500)
+const modalText = await page.locator('.n-modal').innerText()
+assert.ok(modalText.includes('9.9.9'), '弹窗未显示新版本号')
+assert.ok(modalText.includes('假的更新日志'), '弹窗未渲染更新日志')
+await page.screenshot({ path: path.join(ROOT, 'scripts', 'verify-update-modal.png') })
+await page.locator('.n-modal').getByText('稍后再说').click()
+
+await page.screenshot({ path: path.join(ROOT, 'scripts', 'verify-app.png') })
+console.log('PASS — 分路数据、筛选与更新 IPC 正常')
 await app.close()

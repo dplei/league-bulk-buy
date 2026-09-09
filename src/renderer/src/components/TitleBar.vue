@@ -5,6 +5,11 @@
       <span class="title-text">League Bulk Buy</span>
       <span class="title-context">英雄购买</span>
     </div>
+    <div class="title-bar-version" @mousedown.stop>
+      <button class="version-btn" type="button" title="检查更新" @click="checkUpdate">
+        v{{ version }}
+      </button>
+    </div>
     <div class="title-bar-controls" @mousedown.stop>
       <button class="ctrl-btn minimize" type="button" aria-label="最小化窗口" title="最小化" @click="handleMinimize">
         <svg width="12" height="12" viewBox="0 0 12 12"><rect x="1" y="5.5" width="10" height="1" fill="currentColor"/></svg>
@@ -19,6 +24,41 @@
 </template>
 
 <script setup lang="ts">
+import { onMounted, onUnmounted, ref } from 'vue'
+import { useMessage } from 'naive-ui'
+
+const message = useMessage()
+const version = ref('')
+let off: (() => void) | undefined
+let manual = false
+
+async function checkUpdate() {
+  manual = true
+  const result = await window.api.checkUpdate()
+  if (!result.ok) {
+    manual = false
+    message.info(result.message ?? '检查更新失败')
+  }
+}
+
+onMounted(async () => {
+  version.value = await window.api.getAppVersion()
+  off = window.api.onUpdateStatus((status) => {
+    if (!manual) return
+    if (status.state === 'not-available') {
+      manual = false
+      message.success(`已是最新版本 v${status.version}`)
+    } else if (status.state === 'error') {
+      manual = false
+      message.error(`检查更新失败：${status.message}`)
+    } else if (status.state === 'available') {
+      manual = false
+    }
+  })
+})
+
+onUnmounted(() => off?.())
+
 function handleMinimize() {
   window.api.minimizeWindow()
 }
@@ -73,6 +113,26 @@ function handleClose() {
   content: '/';
   margin-right: 9px;
   color: var(--color-border-strong);
+}
+
+.title-bar-version {
+  margin-left: auto;
+  padding-right: 8px;
+  -webkit-app-region: no-drag;
+}
+
+.version-btn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 4px 6px;
+  font-size: 11px;
+  color: var(--color-text-subtle);
+  transition: color 0.18s ease;
+}
+
+.version-btn:hover {
+  color: var(--color-accent);
 }
 
 .title-bar-controls {

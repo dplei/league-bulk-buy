@@ -10,4 +10,4 @@ release/
 
 # Old backup (remove after migration verified)
 packages/_old_frontend
-packages/_old_backend
+packages/_old_backend*.tsbuildinfo

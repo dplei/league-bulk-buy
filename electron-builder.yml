@@ -28,4 +28,6 @@ electronDownload:
   mirror: https://npmmirror.com/mirrors/electron/
 publish:
   provider: github
+  owner: dplei
+  repo: league-bulk-buy
   releaseType: release

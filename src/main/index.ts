@@ -2,6 +2,7 @@ import { app, shell, BrowserWindow, ipcMain } from 'electron';
 import { join } from 'path';
 import { electronApp, optimizer, is } from '@electron-toolkit/utils';
 import { BulkBuyService } from './services/BulkBuyService';
+import { setupUpdater } from './services/UpdaterService';
 
 function createWindow(): void {
   const mainWindow = new BrowserWindow({
@@ -90,6 +91,7 @@ app.whenReady().then(() => {
   });
 
   createWindow();
+  setupUpdater();
 
   app.on('activate', function () {
     if (BrowserWindow.getAllWindows().length === 0) createWindow();

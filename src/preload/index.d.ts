@@ -35,6 +35,15 @@ export interface StatusResponse {
   error?: string
 }
 
+export type UpdateStatus =
+  | { state: 'checking' }
+  | { state: 'not-available'; version: string }
+  | { state: 'available'; version: string; notes: Array<{ version: string; note: string }> }
+  | { state: 'downloading'; percent: number }
+  | { state: 'ready'; version: string }
+  | { state: 'error'; message: string }
+  | { state: 'dev' }
+
 declare global {
   interface Window {
     electron: ElectronAPI
@@ -44,6 +53,11 @@ declare global {
       purchase: (
         items: Array<{ itemId: number; currency: 'IP' | 'RP'; cost: number }>
       ) => Promise<{ success: boolean; purchased: any }>
+      getAppVersion: () => Promise<string>
+      checkUpdate: () => Promise<{ ok: boolean; message?: string }>
+      downloadUpdate: () => Promise<{ ok: boolean; message?: string }>
+      installUpdate: () => Promise<void>
+      onUpdateStatus: (cb: (status: UpdateStatus) => void) => () => void
       minimizeWindow: () => void
       closeWindow: () => void
     }

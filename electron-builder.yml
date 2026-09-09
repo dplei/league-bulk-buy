@@ -4,13 +4,15 @@ compression: maximum
 directories:
   buildResources: build
 files:
-  - '!**/.vscode/*'
-  - '!src/*'
-  - '!electron.vite.config.{js,ts,mjs,cjs}'
-  - '!{.eslintcache,eslint.config.mjs,.prettierignore,.prettierrc.yaml,dev-app-update.yml,CHANGELOG.md,README.md}'
-  - '!{.env,.env.*,.npmrc,pnpm-lock.yaml}'
-  - '!{tsconfig.json,tsconfig.node.json,tsconfig.web.json}'
-  - '!packages/*'
+  # 白名单：以前是黑名单，把 CLAUDE.md、artifacts 截图、.claude 本地配置都打进了包
+  - out/**
+  - resources/**
+  - package.json
+  - node_modules/**
+  # koffi 自带 18 个平台的预编译二进制，只留 Windows x64
+  - '!node_modules/koffi/build/koffi/!(win32_x64)/**'
+  - '!node_modules/koffi/{doc,src,vendor}/**'
+afterPack: ./build/trim-locales.cjs
 asarUnpack:
   - resources/**
 win:

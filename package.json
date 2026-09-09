@@ -1,6 +1,6 @@
 {
   "name": "league-bulk-buy",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "description": "League of Legends Bulk Buy Tool - Electron App",
   "main": "./out/main/index.js",
   "author": "",

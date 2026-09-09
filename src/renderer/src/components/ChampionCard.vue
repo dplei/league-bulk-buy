@@ -1,12 +1,16 @@
 <template>
-  <div
+  <button
+    type="button"
     class="champion-card"
     :class="{
       selected: isSelected,
       owned: champion.owned,
       'on-sale': champion.onSale
     }"
-    @click="!champion.owned && $emit('toggle', champion.itemId)"
+    :disabled="champion.owned"
+    :aria-pressed="champion.owned ? undefined : isSelected"
+    :aria-label="`${champion.name}，${champion.owned ? '已拥有' : isSelected ? '已选择' : '未选择'}`"
+    @click="$emit('toggle', champion.itemId)"
   >
     <div class="champion-avatar">
       <img
@@ -33,7 +37,7 @@
         </span>
       </div>
     </div>
-  </div>
+  </button>
 </template>
 
 <script setup lang="ts">
@@ -54,45 +58,68 @@ function onImgError(e: Event) {
 
 <style scoped>
 .champion-card {
-  border: 2px solid #2a2a3e;
-  border-radius: 8px;
+  display: grid;
+  grid-template-columns: 56px minmax(0, 1fr);
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  min-width: 0;
+  min-height: 72px;
+  padding: 7px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
   overflow: hidden;
   cursor: pointer;
-  transition: all 0.2s;
-  background: #1a1a2e;
+  color: inherit;
+  text-align: left;
+  transition: background-color 0.18s ease, border-color 0.18s ease;
+  background: var(--color-surface);
   position: relative;
   user-select: none;
 }
 
 .champion-card:hover:not(.owned) {
-  border-color: #c89b3c;
-  transform: translateY(-2px);
+  background: var(--color-surface-hover);
+  border-color: var(--color-border-strong);
+}
+
+.champion-card:focus-visible {
+  outline: 2px solid var(--color-accent);
+  outline-offset: 2px;
 }
 
 .champion-card.selected {
-  border-color: #c89b3c;
-  background: #252540;
+  border-color: var(--color-accent);
+  box-shadow: inset 0 0 0 1px var(--color-accent);
 }
 
 .champion-card.owned {
-  opacity: 0.5;
+  opacity: 0.45;
   cursor: not-allowed;
 }
 
 .champion-card.on-sale {
-  border-color: #e05c5c;
+  border-color: var(--color-border);
 }
 
 .champion-avatar {
   position: relative;
-  width: 100%;
-  aspect-ratio: 1;
+  width: 56px;
+  height: 56px;
+  border-radius: var(--radius-sm);
+  background: var(--color-surface-raised);
+  overflow: hidden;
 }
 
 .champion-avatar img {
   width: 100%;
   height: 100%;
   object-fit: cover;
+  transition: filter 0.2s ease;
+}
+
+.champion-card.owned .champion-avatar img {
+  filter: grayscale(0.55);
 }
 
 .badge,
@@ -100,19 +127,20 @@ function onImgError(e: Event) {
   position: absolute;
   top: 4px;
   right: 4px;
-  padding: 2px 6px;
-  border-radius: 4px;
-  font-size: 11px;
-  font-weight: bold;
+  padding: 2px 5px;
+  border-radius: 999px;
+  font-size: 10px;
+  font-weight: 600;
+  line-height: 1.4;
 }
 
 .owned-badge {
-  background: rgba(0, 0, 0, 0.7);
-  color: #888;
+  background: rgba(10, 12, 15, 0.84);
+  color: var(--color-text-muted);
 }
 
 .sale-badge {
-  background: #e05c5c;
+  background: rgba(239, 107, 115, 0.9);
   color: white;
   top: 4px;
   right: 4px;
@@ -122,21 +150,27 @@ function onImgError(e: Event) {
   top: 4px;
   left: 4px;
   right: auto;
-  background: #c89b3c;
-  color: #1a1a2e;
-  font-size: 14px;
-  padding: 2px 5px;
+  width: 18px;
+  height: 18px;
+  display: grid;
+  place-items: center;
+  padding: 0;
+  background: var(--color-accent);
+  color: #111317;
+  font-size: 11px;
+  border-radius: 5px;
 }
 
 .champion-info {
-  padding: 6px 8px;
+  min-width: 0;
+  padding-right: 5px;
 }
 
 .champion-name {
   font-size: 13px;
   font-weight: 600;
-  color: #e5d5a0;
-  margin-bottom: 4px;
+  color: var(--color-text);
+  margin-bottom: 6px;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -144,25 +178,26 @@ function onImgError(e: Event) {
 
 .champion-prices {
   display: flex;
-  flex-direction: column;
-  gap: 2px;
+  flex-wrap: wrap;
+  gap: 2px 10px;
 }
 
 .price {
-  font-size: 11px;
+  font-size: 12px;
+  line-height: 1.35;
 }
 
 .price .original {
-  color: #666;
+  color: var(--color-text-subtle);
   text-decoration: line-through;
   margin-right: 4px;
 }
 
 .price.ip .current {
-  color: #7ec8e3;
+  color: var(--color-blue-essence);
 }
 
 .price.rp .current {
-  color: #a87ee3;
+  color: var(--color-rp);
 }
 </style>
